@@ -1,5 +1,15 @@
 import { motion } from "framer-motion";
-import { ShieldCheck, Code, Cpu, BarChart3 } from "lucide-react";
+import {
+  Database,
+  MonitorSmartphone,
+  Building2,
+  GraduationCap,
+  ShoppingCart,
+  CreditCard,
+  Users,
+  Truck,
+  Handshake,
+} from "lucide-react";
 
 const Services = () => {
   const primaryColor = "#007BFF";
@@ -7,34 +17,63 @@ const Services = () => {
 
   const services = [
     {
-      icon: <Code className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
-      title: "Software Development",
+      icon: <Database className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Enterprise Resource Planning (ERP)",
       description:
-        "We design and build custom enterprise-grade web, desktop, and mobile applications that accelerate digital transformation.",
-      image: "/coding developer workspace.jpeg",
+        "An integrated system connecting accounting, HR, inventory, procurement, and CRM — empowering businesses to operate seamlessly under one platform.",
+      image: "/erp dashboard.jpg",
     },
     {
-      icon: <ShieldCheck className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
-      title: "Cybersecurity Solutions",
+      icon: <MonitorSmartphone className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Point of Sale (POS) & Inventory System",
       description:
-        "We deliver comprehensive cybersecurity frameworks, protecting data and infrastructure from evolving digital threats.",
-      image: "/cybersecurity network.jpeg",
+        "Offline-first POS solution designed for retail and hardware stores. Manage sales, stock movement, and generate receipts — even without internet.",
+      image: "/pos system retail.jpg",
     },
     {
-      icon: <BarChart3 className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
-      title: "Data Science & Analytics",
+      icon: <Building2 className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Hotel & Booking Management System",
       description:
-        "Our data-driven insights empower organizations to make smarter, faster, and evidence-based decisions.",
-      image: "/data analytics dashboard.jpeg",
+        "Smart hotel management platform that automates booking, check-ins, billing, and reporting — designed for hotels, lodges, and resorts.",
+      image: "/hotel booking management.jpg",
     },
     {
-      icon: <Cpu className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
-      title: "Artificial Intelligence & ML",
+      icon: <GraduationCap className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "School Management System",
       description:
-        "Harnessing AI to build predictive, intelligent, and autonomous systems that drive innovation.",
-      image: "/artificial intelligence.jpeg",
+        "Digitize your institution with automated academic records, finance, attendance, and parent communication tools — all under one secure system.",
+      image: "/school management system.jpg",
+    },
+    {
+      icon: <ShoppingCart className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "E-Commerce & Marketplace Solutions",
+      description:
+        "Build online stores and marketplaces with secure payment gateways, product management, and mobile-friendly design tailored for local markets.",
+      image: "/ecommerce dashboard.jpg",
+    },
+    {
+      icon: <CreditCard className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Financial & Payment Solutions",
+      description:
+        "From M-Pesa integration to custom fintech platforms — we deliver secure digital payment infrastructures that drive growth and transparency.",
+      image: "/financial payment platform.jpg",
+    },
+    {
+      icon: <Users className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Human Resource & Payroll Systems",
+      description:
+        "Automate HR processes with digital records, leave tracking, payroll management, and performance analytics in one intuitive platform.",
+      image: "/hr payroll software.jpg",
+    },
+    {
+      icon: <Truck className="w-10 h-10 mb-4" style={{ color: primaryColor }} />,
+      title: "Fleet & Logistics Management",
+      description:
+        "Optimize operations with real-time GPS tracking, vehicle analytics, delivery scheduling, and maintenance management tools.",
+      image: "/fleet logistics system.jpg",
     },
   ];
+
 
   return (
     <div className="bg-white text-gray-900 -mt-6">

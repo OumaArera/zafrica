@@ -6,35 +6,35 @@ const Projects = () => {
 
   const projects = [
     {
-      name: "YGAK.org",
+      name: "Youths for Green Action Kenya",
       description:
         "A digital ecosystem built for Youths for Green Action Kenya (YGAK) to empower, organize, and illuminate youth-driven environmental change. Beyond the website, we developed a full ERP system transforming their operations — from project initiation and budgeting, to fund allocation, payments, donor management, volunteer coordination, and activity scheduling. This platform positions YGAK as a model for digital transformation in the non-profit space across Kenya.",
       image: "/ygak-logo.png",
       location: "Kenya",
     },
     {
-      name: "HouseholdMall.co.ke",
+      name: "Household Mall",
       description:
         "An advanced e-commerce platform for the Kenyan market, designed to simplify online shopping and ensure accessibility of household and consumer products. It features real-time inventory updates, secure payment integrations, and intelligent search capabilities to enhance customer experience and vendor visibility.",
       image: "/hhm-logo.png",
       location: "Kenya",
     },
     {
-      name: "EdmondSerenity.com",
+      name: "1ST Edmonds Serenity",
       description:
         "A comprehensive Adult Family Home management system built for the United States market. The platform digitizes all aspects of care facility management — from resident data (medication, behavior, meals, sleep) to staff scheduling, grocery and supply management, company records, and secure internal communications. It ensures compliance, accuracy, and efficiency in elderly care management.",
       image: "/1ST EDMONDS_LOGO.png",
       location: "USA",
     },
     {
-      name: "Dholuo.co.ke",
+      name: "Dholuo Foundation",
       description:
         "A philanthropic initiative dedicated to preserving the Dholuo language through technology. The platform hosts an online English–Luo dictionary, enabling users to learn, translate, and engage with cultural heritage. It stands as a testament to our belief that technology should preserve, not erase, identity.",
       image: "/dholuo.png",
       location: "Kenya",
     },
     {
-      name: "Vinlogs.com",
+      name: "Vinlogs",
       description:
         "A vehicle history management system enabling users to purchase and access detailed vehicle reports — including service records, mileage, accident data, natural disaster exposure, and ownership history. Vinlogs provides transparency and trust for vehicle buyers and dealers across markets.",
       image: "/vinlogs-logo.png",

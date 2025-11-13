@@ -1,0 +1,2982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEST Technical Implementation Document</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .owner-info {
+            background: #f8f9fa;
+            padding: 20px 40px;
+            border-bottom: 3px solid #1e3c72;
+        }
+        
+        .owner-info p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+        
+        .owner-info strong {
+            color: #1e3c72;
+        }
+        
+        nav {
+            background: #2a5298;
+            padding: 15px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        section {
+            margin-bottom: 60px;
+        }
+        
+        h2 {
+            color: #1e3c72;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #1e3c72;
+        }
+        
+        h3 {
+            color: #2a5298;
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+        }
+        
+        h4 {
+            color: #1e3c72;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #1e3c72;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        tr:hover {
+            background: #e9ecef;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            padding: 15px;
+            border-left: 4px solid #17a2b8;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: #f8d7da;
+            padding: 15px;
+            border-left: 4px solid #dc3545;
+            margin: 20px 0;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            padding: 15px;
+            border-left: 4px solid #28a745;
+            margin: 20px 0;
+        }
+        
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+        
+        li {
+            margin: 8px 0;
+        }
+        
+        .erd-diagram {
+            background: white;
+            padding: 20px;
+            border: 2px solid #1e3c72;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        
+        .entity {
+            background: #e3f2fd;
+            border: 2px solid #1e3c72;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 6px;
+            display: inline-block;
+            min-width: 200px;
+        }
+        
+        .entity-header {
+            background: #1e3c72;
+            color: white;
+            padding: 8px;
+            margin: -10px -10px 10px -10px;
+            border-radius: 4px 4px 0 0;
+            font-weight: bold;
+        }
+        
+        .field {
+            padding: 4px 0;
+            font-size: 0.9em;
+        }
+        
+        .pk {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+        
+        .fk {
+            color: #1976d2;
+            font-style: italic;
+        }
+        
+        footer {
+            background: #1e3c72;
+            color: white;
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+        }
+        
+        @media print {
+            nav {
+                display: none;
+            }
+            
+            .container {
+                box-shadow: none;
+            }
+            
+            section {
+                page-break-inside: avoid;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            nav ul {
+                flex-direction: column;
+            }
+            
+            table {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NEST TECHNICAL IMPLEMENTATION DOCUMENT</h1>
+            <p>Comprehensive Database Design, Business Requirements & Technical Specifications</p>
+            <p style="margin-top: 20px; font-size: 0.9em;">Version 1.0 | November 2025</p>
+        </header>
+        
+        <div class="owner-info">
+            <p><strong>Document Owner:</strong> Zafrika Holdings LTD</p>
+            <p><strong>Website:</strong> <a href="https://www.zafrika.com" style="color: #1e3c72;">www.zafrika.com</a></p>
+            <p><strong>Project:</strong> NEST Cooperative Digital Ecosystem</p>
+            <p><strong>Last Updated:</strong> November 11, 2025</p>
+        </div>
+        
+        <nav>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#erm">Database Design</a></li>
+                <li><a href="#brd">Business Requirements</a></li>
+                <li><a href="#api">API Specifications</a></li>
+                <li><a href="#implementation">Implementation</a></li>
+                <li><a href="#security">Security</a></li>
+            </ul>
+        </nav>
+        
+        <div class="content">
+            <section id="overview">
+                <h2>1. EXECUTIVE OVERVIEW</h2>
+                
+                <h3>1.1 Document Purpose</h3>
+                <p>This document provides the complete technical implementation guide for the NEST Cooperative Digital Ecosystem Version 1. It serves as the authoritative reference for:</p>
+                <ul>
+                    <li>Database schema and entity relationship modeling</li>
+                    <li>Business requirements detailed specifications</li>
+                    <li>API endpoint definitions and data contracts</li>
+                    <li>Authentication and authorization architecture</li>
+                    <li>Implementation guidelines and best practices</li>
+                </ul>
+                
+                <h3>1.2 System Architecture Overview</h3>
+                <p>NEST is a multi-channel cooperative management platform supporting:</p>
+                
+                <table>
+                    <tr>
+                        <th>Channel</th>
+                        <th>Technology</th>
+                        <th>Primary Use Case</th>
+                    </tr>
+                    <tr>
+                        <td>USSD</td>
+                        <td>USSD Gateway Integration</td>
+                        <td>Basic feature phones, low-bandwidth access</td>
+                    </tr>
+                    <tr>
+                        <td>WhatsApp</td>
+                        <td>WhatsApp Business API</td>
+                        <td>Rich messaging, document sharing</td>
+                    </tr>
+                    <tr>
+                        <td>Web Application</td>
+                        <td>React/Next.js Frontend</td>
+                        <td>Full administrative interface</td>
+                    </tr>
+                    <tr>
+                        <td>Mobile App</td>
+                        <td>React Native (Future)</td>
+                        <td>Enhanced mobile experience</td>
+                    </tr>
+                </table>
+                
+                <h3>1.3 Core Technology Stack</h3>
+                <div class="code-block">
+                    <strong>Backend:</strong>
+                    - API Framework: Node.js with Express.js / Python FastAPI
+                    - Database: PostgreSQL 15+ (Primary), Redis (Caching/Sessions)
+                    - Message Queue: RabbitMQ / AWS SQS
+                    - Payment Integration: M-Pesa Daraja API
+                    - Bank Integration: Custom REST APIs per partner bank
+                    
+                    <strong>Frontend:</strong>
+                    - Web: React 18+ with TypeScript, Next.js 14+
+                    - State Management: Zustand / React Query
+                    - UI Framework: TailwindCSS, shadcn/ui
+                    
+                    <strong>Infrastructure:</strong>
+                    - Cloud Provider: AWS / Azure
+                    - Container Orchestration: Docker + Kubernetes
+                    - CI/CD: GitHub Actions
+                    - Monitoring: Prometheus + Grafana, Sentry
+                </div>
+                
+                <h3>1.4 Key Design Principles</h3>
+                <div class="highlight">
+                    <strong>Modularity:</strong> Services are loosely coupled with clear interfaces<br>
+                    <strong>Clean Code:</strong> Follows SOLID principles, comprehensive testing coverage<br>
+                    <strong>Security First:</strong> Defense in depth, encryption at rest and in transit<br>
+                    <strong>Auditability:</strong> Complete audit trail for all financial transactions<br>
+                    <strong>Scalability:</strong> Horizontal scaling support, database partitioning ready
+                </div>
+            </section>
+            
+            <section id="erm">
+                <h2>2. DATABASE DESIGN & ENTITY RELATIONSHIP MODEL</h2>
+                
+                <h3>2.1 Core Entities Overview</h3>
+                <p>The NEST database is organized into the following core entity groups:</p>
+                
+                <table>
+                    <tr>
+                        <th>Entity Group</th>
+                        <th>Key Tables</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td>Identity & Auth</td>
+                        <td>users, sessions, mfa_tokens, audit_logs</td>
+                        <td>User identity, authentication, authorization</td>
+                    </tr>
+                    <tr>
+                        <td>Chama Management</td>
+                        <td>chamas, chama_members, chama_roles, bylaws</td>
+                        <td>Cooperative group structure and governance</td>
+                    </tr>
+                    <tr>
+                        <td>Financial Ledger</td>
+                        <td>accounts, transactions, contributions, loans</td>
+                        <td>Financial transactions and balances</td>
+                    </tr>
+                    <tr>
+                        <td>Loan Management</td>
+                        <td>loan_products, loan_applications, repayments</td>
+                        <td>Loan lifecycle management</td>
+                    </tr>
+                    <tr>
+                        <td>Document Management</td>
+                        <td>documents, minutes, resolutions, approvals</td>
+                        <td>Governance documents and maker-checker</td>
+                    </tr>
+                    <tr>
+                        <td>Notifications</td>
+                        <td>notifications, notification_preferences</td>
+                        <td>Multi-channel communication</td>
+                    </tr>
+                </table>
+                
+                <h3>2.2 Detailed Table Schemas</h3>
+                
+                <h4>2.2.1 Identity & Authentication</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">users</div>
+                    <div class="field"><span class="pk">user_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">phone_number VARCHAR(15) UNIQUE NOT NULL</div>
+                    <div class="field">email VARCHAR(255) UNIQUE</div>
+                    <div class="field">first_name VARCHAR(100) NOT NULL</div>
+                    <div class="field">last_name VARCHAR(100) NOT NULL</div>
+                    <div class="field">id_number VARCHAR(20) UNIQUE NOT NULL</div>
+                    <div class="field">date_of_birth DATE</div>
+                    <div class="field">gender ENUM('M','F','O')</div>
+                    <div class="field">password_hash VARCHAR(255)</div>
+                    <div class="field">pin_hash VARCHAR(255)</div>
+                    <div class="field">kyc_status ENUM('PENDING','VERIFIED','REJECTED')</div>
+                    <div class="field">kyc_verified_at TIMESTAMP</div>
+                    <div class="field">bank_account_number VARCHAR(50)</div>
+                    <div class="field">bank_code VARCHAR(10)</div>
+                    <div class="field">mfa_enabled BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">mfa_secret VARCHAR(255)</div>
+                    <div class="field">status ENUM('ACTIVE','SUSPENDED','CLOSED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">last_login_at TIMESTAMP</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone_number VARCHAR(15) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    id_number VARCHAR(20) UNIQUE NOT NULL,
+    date_of_birth DATE,
+    gender VARCHAR(1) CHECK (gender IN ('M', 'F', 'O')),
+    password_hash VARCHAR(255),
+    pin_hash VARCHAR(255),
+    kyc_status VARCHAR(20) DEFAULT 'PENDING' CHECK (kyc_status IN ('PENDING', 'VERIFIED', 'REJECTED')),
+    kyc_verified_at TIMESTAMP,
+    bank_account_number VARCHAR(50),
+    bank_code VARCHAR(10),
+    mfa_enabled BOOLEAN DEFAULT FALSE,
+    mfa_secret VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'SUSPENDED', 'CLOSED')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP,
+    
+    CONSTRAINT valid_phone CHECK (phone_number ~ '^\+254[0-9]{9}$'),
+    CONSTRAINT valid_email CHECK (email ~ '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
+);
+
+CREATE INDEX idx_users_phone ON users(phone_number);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_id_number ON users(id_number);
+CREATE INDEX idx_users_status ON users(status);
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">sessions</div>
+                    <div class="field"><span class="pk">session_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">channel ENUM('WEB','MOBILE','USSD','WHATSAPP')</div>
+                    <div class="field">access_token_hash VARCHAR(255)</div>
+                    <div class="field">refresh_token_hash VARCHAR(255)</div>
+                    <div class="field">device_fingerprint TEXT</div>
+                    <div class="field">ip_address INET</div>
+                    <div class="field">user_agent TEXT</div>
+                    <div class="field">expires_at TIMESTAMP NOT NULL</div>
+                    <div class="field">revoked BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE sessions (
+    session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    channel VARCHAR(20) NOT NULL CHECK (channel IN ('WEB', 'MOBILE', 'USSD', 'WHATSAPP')),
+    access_token_hash VARCHAR(255) NOT NULL,
+    refresh_token_hash VARCHAR(255),
+    device_fingerprint TEXT,
+    ip_address INET,
+    user_agent TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    revoked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX idx_sessions_channel ON sessions(channel);
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">otp_tokens</div>
+                    <div class="field"><span class="pk">otp_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">otp_code VARCHAR(6) NOT NULL</div>
+                    <div class="field">purpose ENUM('REGISTRATION','LOGIN','RECOVERY','APPROVAL')</div>
+                    <div class="field">channel VARCHAR(20)</div>
+                    <div class="field">attempts INT DEFAULT 0</div>
+                    <div class="field">verified BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">expires_at TIMESTAMP NOT NULL</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <h4>2.2.2 Chama Management</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">chamas</div>
+                    <div class="field"><span class="pk">chama_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">chama_code VARCHAR(20) UNIQUE NOT NULL</div>
+                    <div class="field">name VARCHAR(255) NOT NULL</div>
+                    <div class="field">registration_number VARCHAR(50) UNIQUE</div>
+                    <div class="field">registration_date DATE</div>
+                    <div class="field">bank_account_number VARCHAR(50) NOT NULL</div>
+                    <div class="field">bank_code VARCHAR(10) NOT NULL</div>
+                    <div class="field">paybill_number VARCHAR(20)</div>
+                    <div class="field">total_members INT DEFAULT 0</div>
+                    <div class="field">total_savings DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">total_loans_outstanding DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">contribution_frequency ENUM('WEEKLY','MONTHLY')</div>
+                    <div class="field">minimum_contribution DECIMAL(10,2)</div>
+                    <div class="field">status ENUM('ACTIVE','SUSPENDED','DISSOLVED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE chamas (
+    chama_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chama_code VARCHAR(20) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    registration_number VARCHAR(50) UNIQUE,
+    registration_date DATE,
+    bank_account_number VARCHAR(50) NOT NULL,
+    bank_code VARCHAR(10) NOT NULL,
+    paybill_number VARCHAR(20),
+    total_members INT DEFAULT 0,
+    total_savings DECIMAL(15,2) DEFAULT 0,
+    total_loans_outstanding DECIMAL(15,2) DEFAULT 0,
+    contribution_frequency VARCHAR(20) CHECK (contribution_frequency IN ('WEEKLY', 'MONTHLY')),
+    minimum_contribution DECIMAL(10,2),
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'SUSPENDED', 'DISSOLVED')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_chamas_code ON chamas(chama_code);
+CREATE INDEX idx_chamas_status ON chamas(status);
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">chama_members</div>
+                    <div class="field"><span class="pk">membership_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">member_number VARCHAR(20) NOT NULL</div>
+                    <div class="field">role ENUM('MEMBER','CHAIRPERSON','SECRETARY','TREASURER')</div>
+                    <div class="field">join_date DATE NOT NULL</div>
+                    <div class="field">total_contributions DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">total_loans_taken DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">active_loan_balance DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">status ENUM('ACTIVE','SUSPENDED','EXITED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">UNIQUE(chama_id, user_id)</div>
+                    <div class="field">UNIQUE(chama_id, member_number)</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">chama_bylaws</div>
+                    <div class="field"><span class="pk">bylaw_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field">bylaw_type VARCHAR(50) NOT NULL</div>
+                    <div class="field">parameter_name VARCHAR(100) NOT NULL</div>
+                    <div class="field">parameter_value TEXT NOT NULL</div>
+                    <div class="field">effective_from DATE NOT NULL</div>
+                    <div class="field">approved_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">approved_at TIMESTAMP</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <h4>2.2.3 Financial Ledger</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">accounts</div>
+                    <div class="field"><span class="pk">account_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">account_number VARCHAR(50) UNIQUE NOT NULL</div>
+                    <div class="field">account_type ENUM('CHAMA','MEMBER_SAVINGS','MEMBER_LOAN')</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">current_balance DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">available_balance DECIMAL(15,2) DEFAULT 0</div>
+                    <div class="field">currency VARCHAR(3) DEFAULT 'KES'</div>
+                    <div class="field">status ENUM('ACTIVE','FROZEN','CLOSED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE accounts (
+    account_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    account_number VARCHAR(50) UNIQUE NOT NULL,
+    account_type VARCHAR(20) NOT NULL CHECK (account_type IN ('CHAMA', 'MEMBER_SAVINGS', 'MEMBER_LOAN')),
+    chama_id UUID REFERENCES chamas(chama_id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
+    current_balance DECIMAL(15,2) DEFAULT 0 CHECK (current_balance >= 0),
+    available_balance DECIMAL(15,2) DEFAULT 0 CHECK (available_balance >= 0),
+    currency VARCHAR(3) DEFAULT 'KES',
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'FROZEN', 'CLOSED')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    CONSTRAINT valid_account_owner CHECK (
+        (account_type = 'CHAMA' AND chama_id IS NOT NULL AND user_id IS NULL) OR
+        (account_type IN ('MEMBER_SAVINGS', 'MEMBER_LOAN') AND user_id IS NOT NULL)
+    )
+);
+
+CREATE INDEX idx_accounts_chama ON accounts(chama_id);
+CREATE INDEX idx_accounts_user ON accounts(user_id);
+CREATE INDEX idx_accounts_type ON accounts(account_type);
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">transactions</div>
+                    <div class="field"><span class="pk">transaction_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">transaction_ref VARCHAR(50) UNIQUE NOT NULL</div>
+                    <div class="field">transaction_type ENUM('CONTRIBUTION','LOAN_DISBURSEMENT','LOAN_REPAYMENT','WITHDRAWAL','TRANSFER')</div>
+                    <div class="field"><span class="fk">from_account_id</span> UUID REFERENCES accounts(account_id)</div>
+                    <div class="field"><span class="fk">to_account_id</span> UUID REFERENCES accounts(account_id)</div>
+                    <div class="field">amount DECIMAL(15,2) NOT NULL</div>
+                    <div class="field">currency VARCHAR(3) DEFAULT 'KES'</div>
+                    <div class="field">mpesa_receipt_number VARCHAR(50)</div>
+                    <div class="field">bank_reference VARCHAR(100)</div>
+                    <div class="field">description TEXT</div>
+                    <div class="field">status ENUM('PENDING','COMPLETED','FAILED','REVERSED')</div>
+                    <div class="field">initiated_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">approved_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">channel VARCHAR(20)</div>
+                    <div class="field">metadata JSONB</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">completed_at TIMESTAMP</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">contributions</div>
+                    <div class="field"><span class="pk">contribution_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field"><span class="fk">transaction_id</span> UUID REFERENCES transactions(transaction_id)</div>
+                    <div class="field">contribution_type ENUM('REGULAR','PENALTY','WELFARE','FINE')</div>
+                    <div class="field">amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">contribution_date DATE NOT NULL</div>
+                    <div class="field">payment_method VARCHAR(20)</div>
+                    <div class="field">posted_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">reconciled BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <h4>2.2.4 Loan Management</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">loan_products</div>
+                    <div class="field"><span class="pk">product_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field">product_name VARCHAR(100) NOT NULL</div>
+                    <div class="field">product_type ENUM('EMERGENCY','DEVELOPMENT','EDUCATION')</div>
+                    <div class="field">minimum_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">maximum_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">interest_rate DECIMAL(5,2) NOT NULL</div>
+                    <div class="field">interest_calculation_method ENUM('FLAT','REDUCING_BALANCE')</div>
+                    <div class="field">penalty_rate DECIMAL(5,2)</div>
+                    <div class="field">maximum_term_months INT NOT NULL</div>
+                    <div class="field">requires_guarantors BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">min_guarantors INT DEFAULT 0</div>
+                    <div class="field">approval_workflow ENUM('SINGLE','DUAL','COMMITTEE')</div>
+                    <div class="field">eligibility_criteria JSONB</div>
+                    <div class="field">status ENUM('ACTIVE','INACTIVE')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE loan_products (
+    product_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chama_id UUID NOT NULL REFERENCES chamas(chama_id) ON DELETE CASCADE,
+    product_name VARCHAR(100) NOT NULL,
+    product_type VARCHAR(20) CHECK (product_type IN ('EMERGENCY', 'DEVELOPMENT', 'EDUCATION')),
+    minimum_amount DECIMAL(10,2) NOT NULL CHECK (minimum_amount > 0),
+    maximum_amount DECIMAL(10,2) NOT NULL CHECK (maximum_amount >= minimum_amount),
+    interest_rate DECIMAL(5,2) NOT NULL CHECK (interest_rate >= 0),
+    interest_calculation_method VARCHAR(20) CHECK (interest_calculation_method IN ('FLAT', 'REDUCING_BALANCE')),
+    penalty_rate DECIMAL(5,2) CHECK (penalty_rate >= 0),
+    maximum_term_months INT NOT NULL CHECK (maximum_term_months > 0),
+    requires_guarantors BOOLEAN DEFAULT FALSE,
+    min_guarantors INT DEFAULT 0,
+    approval_workflow VARCHAR(20) CHECK (approval_workflow IN ('SINGLE', 'DUAL', 'COMMITTEE')),
+    eligibility_criteria JSONB,
+    status VARCHAR(20) DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_loan_products_chama ON loan_products(chama_id);
+CREATE INDEX idx_loan_products_type ON loan_products(product_type);
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">loan_applications</div>
+                    <div class="field"><span class="pk">application_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">application_number VARCHAR(50) UNIQUE NOT NULL</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field"><span class="fk">product_id</span> UUID REFERENCES loan_products(product_id)</div>
+                    <div class="field">requested_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">approved_amount DECIMAL(10,2)</div>
+                    <div class="field">loan_term_months INT NOT NULL</div>
+                    <div class="field">purpose TEXT</div>
+                    <div class="field">status ENUM('DRAFT','PENDING','APPROVED','REJECTED','DISBURSED')</div>
+                    <div class="field">submitted_at TIMESTAMP</div>
+                    <div class="field">reviewed_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">reviewed_at TIMESTAMP</div>
+                    <div class="field">review_notes TEXT</div>
+                    <div class="field">disbursement_date DATE</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">loans</div>
+                    <div class="field"><span class="pk">loan_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">loan_number VARCHAR(50) UNIQUE NOT NULL</div>
+                    <div class="field"><span class="fk">application_id</span> UUID REFERENCES loan_applications(application_id)</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">principal_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">interest_rate DECIMAL(5,2) NOT NULL</div>
+                    <div class="field">total_interest DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">total_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">outstanding_balance DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">principal_paid DECIMAL(10,2) DEFAULT 0</div>
+                    <div class="field">interest_paid DECIMAL(10,2) DEFAULT 0</div>
+                    <div class="field">penalty_amount DECIMAL(10,2) DEFAULT 0</div>
+                    <div class="field">disbursement_date DATE NOT NULL</div>
+                    <div class="field">maturity_date DATE NOT NULL</div>
+                    <div class="field">installment_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">installment_frequency ENUM('WEEKLY','MONTHLY')</div>
+                    <div class="field">status ENUM('ACTIVE','FULLY_PAID','DEFAULTED','WRITTEN_OFF')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">loan_repayments</div>
+                    <div class="field"><span class="pk">repayment_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">loan_id</span> UUID REFERENCES loans(loan_id)</div>
+                    <div class="field"><span class="fk">transaction_id</span> UUID REFERENCES transactions(transaction_id)</div>
+                    <div class="field">repayment_date DATE NOT NULL</div>
+                    <div class="field">amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">principal_portion DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">interest_portion DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">penalty_portion DECIMAL(10,2) DEFAULT 0</div>
+                    <div class="field">payment_method VARCHAR(20)</div>
+                    <div class="field">receipt_number VARCHAR(50)</div>
+                    <div class="field">posted_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">loan_guarantors</div>
+                    <div class="field"><span class="pk">guarantor_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">loan_id</span> UUID REFERENCES loans(loan_id)</div>
+                    <div class="field"><span class="fk">guarantor_user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">guaranteed_amount DECIMAL(10,2) NOT NULL</div>
+                    <div class="field">status ENUM('PENDING','ACCEPTED','REJECTED')</div>
+                    <div class="field">accepted_at TIMESTAMP</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <h4>2.2.5 Document & Governance Management</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">documents</div>
+                    <div class="field"><span class="pk">document_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field">document_type ENUM('MINUTES','RESOLUTION','BYLAW','REPORT','OTHER')</div>
+                    <div class="field">title VARCHAR(255) NOT NULL</div>
+                    <div class="field">description TEXT</div>
+                    <div class="field">file_path VARCHAR(500) NOT NULL</div>
+                    <div class="field">file_name VARCHAR(255) NOT NULL</div>
+                    <div class="field">file_size INT</div>
+                    <div class="field">mime_type VARCHAR(100)</div>
+                    <div class="field">meeting_date DATE</div>
+                    <div class="field">uploaded_by UUID REFERENCES users(user_id)</div>
+                    <div class="field">status ENUM('DRAFT','PENDING_APPROVAL','APPROVED','REJECTED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">approvals</div>
+                    <div class="field"><span class="pk">approval_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">approval_type ENUM('DOCUMENT','LOAN','RESOLUTION','BYLAW')</div>
+                    <div class="field">entity_type VARCHAR(50) NOT NULL</div>
+                    <div class="field">entity_id UUID NOT NULL</div>
+                    <div class="field"><span class="fk">chama_id</span> UUID REFERENCES chamas(chama_id)</div>
+                    <div class="field">maker_id UUID REFERENCES users(user_id)</div>
+                    <div class="field">checker_id UUID REFERENCES users(user_id)</div>
+                    <div class="field">maker_action_at TIMESTAMP</div>
+                    <div class="field">checker_action_at TIMESTAMP</div>
+                    <div class="field">checker_decision ENUM('APPROVED','REJECTED')</div>
+                    <div class="field">checker_notes TEXT</div>
+                    <div class="field">otp_verified BOOLEAN DEFAULT FALSE</div>
+                    <div class="field">status ENUM('PENDING','APPROVED','REJECTED','EXPIRED')</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">expires_at TIMESTAMP</div>
+                </div>
+                
+                <h4>2.2.6 Notifications & Communication</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">notifications</div>
+                    <div class="field"><span class="pk">notification_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">notification_type VARCHAR(50) NOT NULL</div>
+                    <div class="field">title VARCHAR(255) NOT NULL</div>
+                    <div class="field">message TEXT NOT NULL</div>
+                    <div class="field">channel ENUM('SMS','EMAIL','WHATSAPP','IN_APP')</div>
+                    <div class="field">priority ENUM('LOW','MEDIUM','HIGH','URGENT')</div>
+                    <div class="field">related_entity_type VARCHAR(50)</div>
+                    <div class="field">related_entity_id UUID</div>
+                    <div class="field">status ENUM('PENDING','SENT','DELIVERED','FAILED','READ')</div>
+                    <div class="field">sent_at TIMESTAMP</div>
+                    <div class="field">read_at TIMESTAMP</div>
+                    <div class="field">metadata JSONB</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="entity">
+                    <div class="entity-header">notification_preferences</div>
+                    <div class="field"><span class="pk">preference_id</span> UUID PRIMARY KEY</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">notification_type VARCHAR(50) NOT NULL</div>
+                    <div class="field">sms_enabled BOOLEAN DEFAULT TRUE</div>
+                    <div class="field">email_enabled BOOLEAN DEFAULT TRUE</div>
+                    <div class="field">whatsapp_enabled BOOLEAN DEFAULT TRUE</div>
+                    <div class="field">in_app_enabled BOOLEAN DEFAULT TRUE</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">updated_at TIMESTAMP DEFAULT NOW()</div>
+                    <div class="field">UNIQUE(user_id, notification_type)</div>
+                </div>
+                
+                <h4>2.2.7 Audit & Compliance</h4>
+                
+                <div class="entity">
+                    <div class="entity-header">audit_logs</div>
+                    <div class="field"><span class="pk">audit_id</span> UUID PRIMARY KEY</div>
+                    <div class="field">event_type VARCHAR(100) NOT NULL</div>
+                    <div class="field">entity_type VARCHAR(50)</div>
+                    <div class="field">entity_id UUID</div>
+                    <div class="field"><span class="fk">user_id</span> UUID REFERENCES users(user_id)</div>
+                    <div class="field">action VARCHAR(50) NOT NULL</div>
+                    <div class="field">ip_address INET</div>
+                    <div class="field">user_agent TEXT</div>
+                    <div class="field">channel VARCHAR(20)</div>
+                    <div class="field">old_values JSONB</div>
+                    <div class="field">new_values JSONB</div>
+                    <div class="field">result VARCHAR(20)</div>
+                    <div class="field">error_message TEXT</div>
+                    <div class="field">metadata JSONB</div>
+                    <div class="field">created_at TIMESTAMP DEFAULT NOW()</div>
+                </div>
+                
+                <div class="code-block">
+CREATE TABLE audit_logs (
+    audit_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type VARCHAR(100) NOT NULL,
+    entity_type VARCHAR(50),
+    entity_id UUID,
+    user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+    action VARCHAR(50) NOT NULL,
+    ip_address INET,
+    user_agent TEXT,
+    channel VARCHAR(20),
+    old_values JSONB,
+    new_values JSONB,
+    result VARCHAR(20) CHECK (result IN ('SUCCESS', 'FAILURE', 'PARTIAL')),
+    error_message TEXT,
+    metadata JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+CREATE INDEX idx_audit_logs_event ON audit_logs(event_type);
+CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
+                </div>
+                
+                <h3>2.3 Entity Relationship Diagram</h3>
+                
+                <div class="info-box">
+                    <strong>Key Relationships:</strong><br>
+                    • One User can belong to multiple Chamas (Many-to-Many via chama_members)<br>
+                    • One Chama has multiple Members (One-to-Many)<br>
+                    • One User can have multiple Accounts across different Chamas<br>
+                    • One Loan belongs to one User and one Chama<br>
+                    • Transactions link accounts through from_account_id and to_account_id<br>
+                    • Documents require Approvals (maker-checker workflow)<br>
+                    • All financial actions are logged in audit_logs
+                </div>
+                
+                <div class="code-block">
+-- Core Relationship Queries
+
+-- Get all chamas for a user
+SELECT c.*, cm.role, cm.member_number
+FROM chamas c
+INNER JOIN chama_members cm ON c.chama_id = cm.chama_id
+WHERE cm.user_id = $user_id AND cm.status = 'ACTIVE';
+
+-- Get member's financial summary
+SELECT 
+    u.user_id,
+    u.first_name,
+    u.last_name,
+    cm.member_number,
+    SUM(con.amount) as total_contributions,
+    COUNT(DISTINCT l.loan_id) as total_loans,
+    SUM(l.outstanding_balance) as outstanding_loan_balance
+FROM users u
+INNER JOIN chama_members cm ON u.user_id = cm.user_id
+LEFT JOIN contributions con ON u.user_id = con.user_id AND cm.chama_id = con.chama_id
+LEFT JOIN loans l ON u.user_id = l.user_id AND cm.chama_id = l.chama_id AND l.status = 'ACTIVE'
+WHERE cm.chama_id = $chama_id
+GROUP BY u.user_id, u.first_name, u.last_name, cm.member_number;
+                </div>
+                
+                <h3>2.4 Database Indexing Strategy</h3>
+                
+                <table>
+                    <tr>
+                        <th>Table</th>
+                        <th>Index Type</th>
+                        <th>Columns</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td>users</td>
+                        <td>B-tree (Unique)</td>
+                        <td>phone_number, email, id_number</td>
+                        <td>Fast lookup for authentication</td>
+                    </tr>
+                    <tr>
+                        <td>transactions</td>
+                        <td>B-tree</td>
+                        <td>created_at DESC</td>
+                        <td>Recent transaction queries</td>
+                    </tr>
+                    <tr>
+                        <td>transactions</td>
+                        <td>B-tree</td>
+                        <td>from_account_id, to_account_id</td>
+                        <td>Account statement generation</td>
+                    </tr>
+                    <tr>
+                        <td>loans</td>
+                        <td>B-tree</td>
+                        <td>user_id, status</td>
+                        <td>Active loan queries per member</td>
+                    </tr>
+                    <tr>
+                        <td>contributions</td>
+                        <td>B-tree</td>
+                        <td>chama_id, contribution_date DESC</td>
+                        <td>Contribution history reports</td>
+                    </tr>
+                    <tr>
+                        <td>audit_logs</td>
+                        <td>B-tree</td>
+                        <td>user_id, created_at DESC</td>
+                        <td>User activity audit trails</td>
+                    </tr>
+                    <tr>
+                        <td>notifications</td>
+                        <td>B-tree</td>
+                        <td>user_id, status, created_at DESC</td>
+                        <td>Unread notifications fetch</td>
+                    </tr>
+                </table>
+                
+                <h3>2.5 Data Integrity Constraints</h3>
+                
+                <div class="code-block">
+-- Transaction balancing constraint
+ALTER TABLE transactions ADD CONSTRAINT check_transaction_balance
+CHECK (
+    (transaction_type IN ('CONTRIBUTION', 'LOAN_REPAYMENT') AND to_account_id IS NOT NULL) OR
+    (transaction_type = 'LOAN_DISBURSEMENT' AND from_account_id IS NOT NULL) OR
+    (transaction_type = 'TRANSFER' AND from_account_id IS NOT NULL AND to_account_id IS NOT NULL)
+);
+
+-- Loan amount constraints
+ALTER TABLE loans ADD CONSTRAINT check_loan_amounts
+CHECK (
+    outstanding_balance >= 0 AND
+    principal_paid + interest_paid <= total_amount AND
+    principal_paid <= principal_amount
+);
+
+-- Account balance non-negative
+ALTER TABLE accounts ADD CONSTRAINT check_positive_balance
+CHECK (current_balance >= 0 AND available_balance >= 0);
+
+-- Contribution amount positive
+ALTER TABLE contributions ADD CONSTRAINT check_positive_contribution
+CHECK (amount > 0);
+                </div>
+            </section>
+            
+            <section id="brd">
+                <h2>3. BUSINESS REQUIREMENTS DOCUMENT (BRD)</h2>
+                
+                <h3>3.1 Functional Requirements</h3>
+                
+                <h4>3.1.1 User Registration & KYC (FR-001)</h4>
+                
+                <table>
+                    <tr>
+                        <th>Requirement ID</th>
+                        <th>FR-001</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority</strong></td>
+                        <td>CRITICAL</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td>System shall allow users to register and verify identity using phone number and bank account details</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Acceptance Criteria</strong></td>
+                        <td>
+                            1. User provides phone number, name, ID number, bank account<br>
+                            2. System sends OTP to phone number<br>
+                            3. User verifies OTP within 5 minutes<br>
+                            4. System calls bank KYC API to verify account ownership<br>
+                            5. On success, user account created with status VERIFIED<br>
+                            6. User receives confirmation SMS with user_id
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Rules</strong></td>
+                        <td>
+                            • Phone number must be Kenyan (+254)<br>
+                            • Bank account must exist and match provided name<br>
+                            • One phone number = one user account<br>
+                            • Failed KYC attempts limited to 3 per day
+                        </td>
+                    </tr>
+                </table>
+                
+                <h4>3.1.2 Multi-Channel Authentication (FR-002)</h4>
+                
+                <table>
+                    <tr>
+                        <th>Requirement ID</th>
+                        <th>FR-002</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority</strong></td>
+                        <td>CRITICAL</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td>System shall support authentication across USSD, WhatsApp, and Web channels using appropriate credentials</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Channel-Specific Auth</strong></td>
+                        <td>
+                            <strong>USSD:</strong> MSISDN + 4-6 digit PIN<br>
+                            <strong>WhatsApp:</strong> Linked phone + OTP for sensitive actions<br>
+                            <strong>Web:</strong> Phone/Email + Password + OTP (first device)<br>
+                            <strong>Bank Officials:</strong> Email + Password + TOTP (mandatory)
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Session Management</strong></td>
+                        <td>
+                            • Web sessions: 30 min idle timeout, 24 hour absolute<br>
+                            • USSD sessions: 5 min timeout<br>
+                            • WhatsApp sessions: Persistent, re-auth for sensitive ops<br>
+                            • Users can view and revoke active sessions
+                        </td>
+                    </tr>
+                </table>
+                
+                <h4>3.1.3 Contribution Management (FR-003)</h4>
+                
+                <table>
+                    <tr>
+                        <th>Requirement ID</th>
+                        <th>FR-003</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority</strong></td>
+                        <td>HIGH</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td>Members shall make contributions via M-Pesa STK Push using their member number</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Flow</strong></td>
+                        <td>
+                            1. Member initiates contribution (any channel)<br>
+                            2. Selects contribution type (Regular/Welfare/Fine)<br>
+                            3. Enters amount (min: chama minimum, max: no limit)<br>
+                            4. Enters M-Pesa phone number<br>
+                            5. Receives STK push prompt<br>
+                            6. Confirms payment on phone<br>
+                            7. System receives webhook from M-Pesa<br>
+                            8. Auto-reconciles using member number in reference<br>
+                            9. Updates member account balance<br>
+                            10. Sends confirmation notification
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Business Rules</strong></td>
+                        <td>
+                            • Contribution must meet chama minimum (if regular)<br>
+                            • Member number embedded in M-Pesa reference<br>
+                            • Reconciliation occurs within 60 seconds<br>
+                            • Unmatched payments flagged for Treasurer review<br>
+                            • All contributions are non-refundable unless chama policy allows
+                        </td>
+                    </tr>
+                </table>
+                
+                <h4>3.1.4 Emergency Loan Processing (FR-004)</h4>
+                
+                <table>
+                    <tr>
+                        <th>Requirement ID</th>
+                        <th>FR-004</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority</strong></td>
+                        <td>HIGH</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Description</strong></td>
+                        <td>Members shall request and receive emergency loans instantly within approved limits</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Flow</strong></td>
+                        <td>
+                            1. Member requests emergency loan<br>
+                            2. System validates eligibility (contributions, existing loans, limit)<br>
+                            3. If eligible, auto-approves<br>
+                            4. Triggers bank API to transfer funds from chama account to member account<br>
+                            5. Creates loan record with repayment schedule<br>
+                            6. Updates member and chama balances<br>
+                            7. Sends loan confirmation with terms
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Eligibility Rules</strong></td>
+                        <td>
+                            • Member must have contributed for minimum period (e.g., 3 months)<br>
+                            • No existing defaulted loans<br>
+                            • Requested amount ≤ 3x average monthly contribution<br>
+                            • Chama must have sufficient liquidity<br>
+                            • Member's total active loans ≤ configured limit
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Loan Terms</strong></td>
+                        <td>
+                            • Maximum amount: 3x average contribution<br>
+                            • Interest rate: Per chama bylaws<br>
+                            • Repayment period: 1-3 months<br>
+                            • Auto-deduction from future contributions
+                        </td>
+                    </tr>
+                </table>
+                
+                <h4>3.1.5 Development Loan Approval Workflow (FR-005)</h4>
+                
+               
+            <h4>3.1.5 Development Loan Approval Workflow (FR-005) - Continued</h4>
+            
+            <table>
+                <tr>
+                    <td><strong>SLA Requirements</strong></td>
+                    <td>
+                        • Treasurer review: Within 48 hours<br>
+                        • Chairperson review: Within 24 hours after Treasurer approval<br>
+                        • Automated reminder notifications every 12 hours<br>
+                        • Auto-rejection if not processed within 7 days
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Notification Flow</strong></td>
+                    <td>
+                        1. Member receives application confirmation<br>
+                        2. Treasurer receives approval request notification<br>
+                        3. On Treasurer approval, Chairperson notified<br>
+                        4. On final approval, Member receives success notification with disbursement timeline<br>
+                        5. On rejection, Member receives reason and resubmission guidance
+                    </td>
+                </tr>
+            </table>
+
+            <h4>3.1.6 Loan Repayment Management (FR-006)</h4>
+            
+            <table>
+                <tr>
+                    <th>Requirement ID</th>
+                    <th>FR-006</th>
+                </tr>
+                <tr>
+                    <td><strong>Priority</strong></td>
+                    <td>HIGH</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Members shall repay loans via M-Pesa with automatic allocation to principal, interest, and penalties</td>
+                </tr>
+                <tr>
+                    <td><strong>Repayment Flow</strong></td>
+                    <td>
+                        1. Member initiates loan repayment (any channel)<br>
+                        2. System displays outstanding balance breakdown (principal, interest, penalties)<br>
+                        3. Member selects full or partial payment<br>
+                        4. Member enters M-Pesa phone number<br>
+                        5. STK push sent with loan reference<br>
+                        6. System receives M-Pesa webhook confirmation<br>
+                        7. Payment allocated: Penalties → Interest → Principal<br>
+                        8. Loan balance updated, repayment schedule recalculated<br>
+                        9. Member receives confirmation with updated balance
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Business Rules</strong></td>
+                    <td>
+                        • Minimum repayment: Interest due + penalties<br>
+                        • Payment allocation order: Penalties first, then interest, then principal<br>
+                        • Early repayment allowed without penalty<br>
+                        • Partial payments accepted but must cover minimum due<br>
+                        • Late payment penalties calculated daily after due date
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Auto-Deduction</strong></td>
+                    <td>
+                        • For members with active loans, contributions auto-split:<br>
+                        • First: Loan installment due amount<br>
+                        • Remainder: Regular savings<br>
+                        • Member notified of deduction in contribution receipt
+                    </td>
+                </tr>
+            </table>
+
+            <h4>3.1.7 Document Management & Maker-Checker (FR-007)</h4>
+            
+            <table>
+                <tr>
+                    <th>Requirement ID</th>
+                    <th>FR-007</th>
+                </tr>
+                <tr>
+                    <td><strong>Priority</strong></td>
+                    <td>MEDIUM</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>Secretary uploads meeting minutes, resolutions requiring Chairperson approval via maker-checker workflow</td>
+                </tr>
+                <tr>
+                    <td><strong>Workflow</strong></td>
+                    <td>
+                        <strong>Step 1 - Maker (Secretary):</strong><br>
+                        • Uploads document (PDF/Image)<br>
+                        • Adds title, meeting date, summary<br>
+                        • Document saved as DRAFT<br>
+                        • Submits for approval<br><br>
+                        
+                        <strong>Step 2 - Checker (Chairperson):</strong><br>
+                        • Receives approval notification<br>
+                        • Reviews document in system<br>
+                        • Approves or rejects with notes<br>
+                        • OTP required for approval action<br><br>
+                        
+                        <strong>Step 3 - Publication:</strong><br>
+                        • On approval, document becomes ACTIVE<br>
+                        • Visible to all chama members<br>
+                        • Audit trail recorded<br>
+                        • All members notified of new document
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Document Types</strong></td>
+                    <td>
+                        • Meeting Minutes (monthly/quarterly)<br>
+                        • AGM Resolutions<br>
+                        • Bylaw amendments<br>
+                        • Financial reports<br>
+                        • Loan policy decisions
+                    </td>
+                </tr>
+            </table>
+
+            <h4>3.1.8 Multi-Channel Notifications (FR-008)</h4>
+            
+            <table>
+                <tr>
+                    <th>Requirement ID</th>
+                    <th>FR-008</th>
+                </tr>
+                <tr>
+                    <td><strong>Priority</strong></td>
+                    <td>MEDIUM</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>System shall send notifications via SMS, WhatsApp, and In-App based on user preferences</td>
+                </tr>
+                <tr>
+                    <td><strong>Notification Events</strong></td>
+                    <td>
+                        • Contribution confirmed<br>
+                        • Loan application received/approved/rejected<br>
+                        • Loan repayment recorded<br>
+                        • Loan due date reminder (7 days, 3 days, 1 day before)<br>
+                        • Document pending approval<br>
+                        • Meeting reminder<br>
+                        • Account statement available<br>
+                        • Security alerts (password change, new device login)
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Priority Levels</strong></td>
+                    <td>
+                        • URGENT: Security alerts, payment confirmations (all channels)<br>
+                        • HIGH: Loan approvals, due date reminders (SMS + WhatsApp)<br>
+                        • MEDIUM: Meeting reminders, document notifications (WhatsApp + In-App)<br>
+                        • LOW: General updates (In-App only)
+                    </td>
+                </tr>
+            </table>
+
+            <h4>3.1.9 Bank Integration & Reconciliation (FR-009)</h4>
+            
+            <table>
+                <tr>
+                    <th>Requirement ID</th>
+                    <th>FR-009</th>
+                </tr>
+                <tr>
+                    <td><strong>Priority</strong></td>
+                    <td>CRITICAL</td>
+                </tr>
+                <tr>
+                    <td><strong>Description</strong></td>
+                    <td>System shall integrate with partner banks via REST APIs for real-time fund transfers and account verification</td>
+                </tr>
+                <tr>
+                    <td><strong>Bank Operations</strong></td>
+                    <td>
+                        <strong>1. KYC Verification:</strong><br>
+                        • Endpoint: POST /kyc/verify<br>
+                        • Validates account ownership during registration<br><br>
+                        
+                        <strong>2. Balance Inquiry:</strong><br>
+                        • Endpoint: GET /accounts/{account_no}/balance<br>
+                        • Real-time chama account balance checks<br><br>
+                        
+                        <strong>3. Fund Transfer:</strong><br>
+                        • Endpoint: POST /transfers<br>
+                        • Chama to Member disbursements<br>
+                        • Member to Chama contributions (alternative to M-Pesa)<br><br>
+                        
+                        <strong>4. Transaction History:</strong><br>
+                        • Endpoint: GET /accounts/{account_no}/transactions<br>
+                        • Daily reconciliation sync
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Reconciliation Process</strong></td>
+                    <td>
+                        • Hourly: M-Pesa webhook vs ledger comparison<br>
+                        • Daily: Bank statement download and matching<br>
+                        • Weekly: Treasurer review of unmatched transactions<br>
+                        • Monthly: Full audit with discrepancy report
+                    </td>
+                </tr>
+            </table>
+
+            <h3>3.2 Non-Functional Requirements</h3>
+
+            <h4>3.2.1 Performance Requirements (NFR-001)</h4>
+            
+            <table>
+                <tr>
+                    <th>Metric</th>
+                    <th>Target</th>
+                    <th>Measurement</th>
+                </tr>
+                <tr>
+                    <td>API Response Time</td>
+                    <td>&lt; 500ms (p95)</td>
+                    <td>All API endpoints</td>
+                </tr>
+                <tr>
+                    <td>USSD Response</td>
+                    <td>&lt; 2 seconds</td>
+                    <td>Menu navigation</td>
+                </tr>
+                <tr>
+                    <td>M-Pesa Webhook Processing</td>
+                    <td>&lt; 60 seconds</td>
+                    <td>Payment to ledger update</td>
+                </tr>
+                <tr>
+                    <td>Concurrent Users</td>
+                    <td>10,000 active sessions</td>
+                    <td>Load testing requirement</td>
+                </tr>
+                <tr>
+                    <td>Database Query Time</td>
+                    <td>&lt; 100ms (p99)</td>
+                    <td>All SELECT queries</td>
+                </tr>
+            </table>
+
+            <h4>3.2.2 Security Requirements (NFR-002)</h4>
+            
+            <div class="warning-box">
+                <strong>Critical Security Measures:</strong>
+                <ul>
+                    <li><strong>Encryption:</strong> AES-256-GCM for data at rest, TLS 1.3 for data in transit</li>
+                    <li><strong>Password Policy:</strong> Minimum 8 characters, 1 uppercase, 1 number, 1 special character</li>
+                    <li><strong>PIN Policy:</strong> 4-6 digits, no sequential numbers (1234), no repeated digits (1111)</li>
+                    <li><strong>Session Timeout:</strong> Web 30min idle, USSD 5min, WhatsApp persistent with re-auth</li>
+                    <li><strong>Rate Limiting:</strong> 5 failed login attempts = 15min lockout, OTP requests limited to 3/hour</li>
+                    <li><strong>Audit Logging:</strong> All authentication attempts, financial transactions, approval actions</li>
+                </ul>
+            </div>
+
+            <h4>3.2.3 Availability Requirements (NFR-003)</h4>
+            
+            <table>
+                <tr>
+                    <th>Service</th>
+                    <th>Uptime Target</th>
+                    <th>Max Downtime/Month</th>
+                </tr>
+                <tr>
+                    <td>Web Application</td>
+                    <td>99.9%</td>
+                    <td>43 minutes</td>
+                </tr>
+                <tr>
+                    <td>USSD Gateway</td>
+                    <td>99.5%</td>
+                    <td>3.6 hours</td>
+                </tr>
+                <tr>
+                    <td>WhatsApp Bot</td>
+                    <td>99.5%</td>
+                    <td>3.6 hours</td>
+                </tr>
+                <tr>
+                    <td>API Services</td>
+                    <td>99.9%</td>
+                    <td>43 minutes</td>
+                </tr>
+                <tr>
+                    <td>Database</td>
+                    <td>99.95%</td>
+                    <td>21 minutes</td>
+                </tr>
+            </table>
+
+            <h2 id="api">4. API SPECIFICATIONS</h2>
+
+            <h3>4.1 Authentication APIs</h3>
+
+            <h4>4.1.1 User Registration</h4>
+            
+            <div class="code-block">
+POST /api/v1/auth/register
+
+Request:
+{
+  "phone_number": "+254712345678",
+  "email": "john.doe@example.com",
+  "first_name": "John",
+  "last_name": "Doe",
+  "id_number": "12345678",
+  "date_of_birth": "1990-05-15",
+  "gender": "M",
+  "bank_account_number": "0123456789",
+  "bank_code": "01"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "OTP sent to +254712345678",
+  "data": {
+    "registration_id": "REG-UUID-123",
+    "otp_expires_at": "2025-11-11T20:05:00Z"
+  }
+}
+
+Error (400 Bad Request):
+{
+  "status": "error",
+  "message": "Phone number already registered",
+  "error_code": "PHONE_EXISTS"
+}
+            </div>
+
+            <h4>4.1.2 OTP Verification</h4>
+            
+            <div class="code-block">
+POST /api/v1/auth/verify-otp
+
+Request:
+{
+  "registration_id": "REG-UUID-123",
+  "otp": "123456"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "Registration completed successfully",
+  "data": {
+    "user_id": "USR-UUID-456",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "9s8djw2sdlf8sl3kd...",
+    "expires_in": 1800,
+    "token_type": "Bearer"
+  }
+}
+            </div>
+
+            <h4>4.1.3 Login</h4>
+            
+            <div class="code-block">
+POST /api/v1/auth/login
+
+Request:
+{
+  "phone_number": "+254712345678",
+  "password": "SecurePass123!",
+  "channel": "WEB"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "user_id": "USR-UUID-456",
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "9s8djw2sdlf8sl3kd...",
+    "expires_in": 1800,
+    "user_profile": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@example.com",
+      "kyc_status": "VERIFIED"
+    }
+  }
+}
+
+Response (202 Accepted - New Device):
+{
+  "status": "mfa_required",
+  "message": "OTP sent to registered phone",
+  "data": {
+    "session_id": "SESS-UUID-789",
+    "otp_expires_at": "2025-11-11T20:05:00Z"
+  }
+}
+            </div>
+
+            <h3>4.2 Chama Management APIs</h3>
+
+            <h4>4.2.1 Create Chama</h4>
+            
+            <div class="code-block">
+POST /api/v1/chamas
+
+Headers:
+Authorization: Bearer {access_token}
+
+Request:
+{
+  "name": "Unity Savings Group",
+  "registration_number": "REG/2025/001",
+  "registration_date": "2025-01-15",
+  "bank_account_number": "9876543210",
+  "bank_code": "01",
+  "paybill_number": "123456",
+  "contribution_frequency": "MONTHLY",
+  "minimum_contribution": 1000.00,
+  "officials": [
+    {
+      "user_id": "USR-UUID-123",
+      "role": "CHAIRPERSON"
+    },
+    {
+      "user_id": "USR-UUID-456",
+      "role": "SECRETARY"
+    },
+    {
+      "user_id": "USR-UUID-789",
+      "role": "TREASURER"
+    }
+  ]
+}
+
+Response (201 Created):
+{
+  "status": "success",
+  "message": "Chama created successfully",
+  "data": {
+    "chama_id": "CHM-UUID-001",
+    "chama_code": "CHM001",
+    "name": "Unity Savings Group",
+    "status": "ACTIVE",
+    "created_at": "2025-11-11T19:30:00Z"
+  }
+}
+            </div>
+
+            <h4>4.2.2 Add Chama Member</h4>
+            
+            <div class="code-block">
+POST /api/v1/chamas/{chama_id}/members
+
+Request:
+{
+  "user_id": "USR-UUID-999",
+  "member_number": "MEM-001",
+  "role": "MEMBER",
+  "join_date": "2025-11-11"
+}
+
+Response (201 Created):
+{
+  "status": "success",
+  "data": {
+    "membership_id": "MEM-UUID-111",
+    "chama_id": "CHM-UUID-001",
+    "user_id": "USR-UUID-999",
+    "member_number": "MEM-001",
+    "role": "MEMBER",
+    "status": "ACTIVE"
+  }
+}
+            </div>
+
+            <h3>4.3 Contribution APIs</h3>
+
+            <h4>4.3.1 Initiate Contribution (STK Push)</h4>
+            
+            <div class="code-block">
+POST /api/v1/contributions/initiate
+
+Request:
+{
+  "chama_id": "CHM-UUID-001",
+  "user_id": "USR-UUID-456",
+  "contribution_type": "REGULAR",
+  "amount": 2000.00,
+  "mpesa_phone": "+254712345678"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "STK push sent to +254712345678",
+  "data": {
+    "contribution_id": "CON-UUID-222",
+    "merchant_request_id": "29115-34620561-1",
+    "checkout_request_id": "ws_CO_191220191020363925",
+    "response_code": "0",
+    "response_description": "Success. Request accepted for processing"
+  }
+}
+            </div>
+
+            <h4>4.3.2 M-Pesa Webhook (Callback)</h4>
+            
+            <div class="code-block">
+POST /api/v1/webhooks/mpesa/callback
+
+Request:
+{
+  "Body": {
+    "stkCallback": {
+      "MerchantRequestID": "29115-34620561-1",
+      "CheckoutRequestID": "ws_CO_191220191020363925",
+      "ResultCode": 0,
+      "ResultDesc": "The service request is processed successfully.",
+      "CallbackMetadata": {
+        "Item": [
+          {
+            "Name": "Amount",
+            "Value": 2000
+          },
+          {
+            "Name": "MpesaReceiptNumber",
+            "Value": "QGK4MO8XYZ"
+          },
+          {
+            "Name": "TransactionDate",
+            "Value": 20251111193045
+          },
+          {
+            "Name": "PhoneNumber",
+            "Value": 254712345678
+          }
+        ]
+      }
+    }
+  }
+}
+
+Response (200 OK):
+{
+  "ResultCode": 0,
+  "ResultDesc": "Accepted"
+}
+
+Internal Processing:
+1. Extract receipt number: QGK4MO8XYZ
+2. Match to contribution_id via merchant_request_id
+3. Update contribution status to COMPLETED
+4. Create transaction record
+5. Update member account balance
+6. Send confirmation notification
+            </div>
+
+            <h4>4.3.3 Get Contribution Statement</h4>
+            
+            <div class="code-block">
+GET /api/v1/contributions/statement?chama_id={chama_id}&user_id={user_id}&from_date={date}&to_date={date}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "member": {
+      "user_id": "USR-UUID-456",
+      "member_number": "MEM-001",
+      "name": "John Doe"
+    },
+    "period": {
+      "from": "2025-01-01",
+      "to": "2025-11-11"
+    },
+    "summary": {
+      "total_contributions": 22000.00,
+      "regular_contributions": 20000.00,
+      "penalty_contributions": 1000.00,
+      "welfare_contributions": 1000.00,
+      "contribution_count": 11
+    },
+    "contributions": [
+      {
+        "contribution_id": "CON-UUID-222",
+        "contribution_date": "2025-11-10",
+        "contribution_type": "REGULAR",
+        "amount": 2000.00,
+        "payment_method": "MPESA",
+        "mpesa_receipt": "QGK4MO8XYZ",
+        "status": "COMPLETED"
+      }
+    ]
+  }
+}
+            </div>
+
+            <h3>4.4 Loan Management APIs</h3>
+
+            <h4>4.4.1 Create Loan Application</h4>
+            
+            <div class="code-block">
+POST /api/v1/loans/applications
+
+Request:
+{
+  "chama_id": "CHM-UUID-001",
+  "user_id": "USR-UUID-456",
+  "product_id": "PROD-UUID-111",
+  "requested_amount": 50000.00,
+  "loan_term_months": 6,
+  "purpose": "Business expansion - purchasing inventory for retail shop"
+}
+
+Response (201 Created):
+{
+  "status": "success",
+  "message": "Loan application submitted successfully",
+  "data": {
+    "application_id": "APP-UUID-333",
+    "application_number": "LOAN-2025-001",
+    "status": "PENDING",
+    "requested_amount": 50000.00,
+    "loan_term_months": 6,
+    "estimated_monthly_payment": 8750.00,
+    "submitted_at": "2025-11-11T19:30:00Z"
+  }
+}
+            </div>
+
+            <h4>4.4.2 Approve Loan Application (Maker-Checker)</h4>
+            
+            <div class="code-block">
+POST /api/v1/loans/applications/{application_id}/approve
+
+Request (Treasurer - First Approval):
+{
+  "approver_role": "TREASURER",
+  "approved_amount": 50000.00,
+  "review_notes": "Member has excellent repayment history. Approved.",
+  "otp": "123456"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "First approval completed. Awaiting Chairperson approval.",
+  "data": {
+    "application_id": "APP-UUID-333",
+    "status": "PENDING_FINAL_APPROVAL",
+    "approvals": [
+      {
+        "approver_role": "TREASURER",
+        "approver_name": "Jane Smith",
+        "approved_at": "2025-11-11T19:35:00Z",
+        "approved_amount": 50000.00
+      }
+    ],
+    "next_approver": "CHAIRPERSON"
+  }
+}
+
+Request (Chairperson - Final Approval):
+{
+  "approver_role": "CHAIRPERSON",
+  "approved_amount": 50000.00,
+  "review_notes": "Approved for disbursement",
+  "otp": "654321"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "Loan application fully approved. Initiating disbursement.",
+  "data": {
+    "application_id": "APP-UUID-333",
+    "loan_id": "LOAN-UUID-444",
+    "status": "APPROVED",
+    "disbursement_status": "PENDING"
+  }
+}
+            </div>
+
+            <h4>4.4.3 Disburse Loan (Bank Transfer)</h4>
+            
+            <div class="code-block">
+POST /api/v1/loans/{loan_id}/disburse
+
+Internal Flow (Automated after approval):
+1. Validate chama account has sufficient balance
+2. Call Bank API to transfer funds
+3. Update loan status to DISBURSED
+4. Create transaction records
+5. Send notification to member
+
+Bank API Call:
+POST {bank_api_url}/transfers
+{
+  "from_account": "9876543210",
+  "to_account": "0123456789",
+  "amount": 50000.00,
+  "reference": "LOAN-2025-001",
+  "narration": "Loan disbursement - Unity Savings Group"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "data": {
+    "loan_id": "LOAN-UUID-444",
+    "loan_number": "LOAN-2025-001",
+    "principal_amount": 50000.00,
+    "interest_rate": 10.00,
+    "total_interest": 5000.00,
+    "total_amount": 55000.00,
+    "monthly_installment": 9166.67,
+    "disbursement_date": "2025-11-11",
+    "maturity_date": "2025-05-11",
+    "status": "ACTIVE"
+  }
+}
+            </div>
+
+            <h4>4.4.4 Record Loan Repayment</h4>
+            
+            <div class="code-block">
+POST /api/v1/loans/{loan_id}/repayments
+
+Request:
+{
+  "amount": 10000.00,
+  "mpesa_phone": "+254712345678",
+  "payment_date": "2025-11-11"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "Repayment processed successfully",
+  "data": {
+    "repayment_id": "REP-UUID-555",
+    "loan_id": "LOAN-UUID-444",
+    "amount_paid": 10000.00,
+    "allocation": {
+      "penalty_portion": 500.00,
+      "interest_portion": 833.33,
+      "principal_portion": 8666.67
+    },
+    "outstanding_balance": 45000.00,
+    "next_payment_due": "2025-12-11",
+    "next_payment_amount": 9166.67
+  }
+}
+            </div>
+
+            <h3>4.5 Document Management APIs</h3>
+
+            <h4>4.5.1 Upload Document</h4>
+            
+            <div class="code-block">
+POST /api/v1/documents
+
+Headers:
+Authorization: Bearer {access_token}
+Content-Type: multipart/form-data
+
+Request:
+{
+  "chama_id": "CHM-UUID-001",
+  "document_type": "MINUTES",
+  "title": "Monthly Meeting Minutes - November 2025",
+  "description": "Discussion on loan limit increase and new member applications",
+  "meeting_date": "2025-11-10",
+  "file": [binary file data]
+}
+
+Response (201 Created):
+{
+  "status": "success",
+  "data": {
+    "document_id": "DOC-UUID-666",
+    "document_type": "MINUTES",
+    "title": "Monthly Meeting Minutes - November 2025",
+    "file_name": "minutes_nov_2025.pdf",
+    "file_size": 2048576,
+    "status": "PENDING_APPROVAL",
+    "uploaded_by": "USR-UUID-456",
+    "uploaded_at": "2025-11-11T19:40:00Z"
+  }
+}
+            </div>
+
+            <h4>4.5.2 Approve Document</h4>
+            
+            <div class="code-block">
+POST /api/v1/documents/{document_id}/approve
+
+Request:
+{
+  "approver_id": "USR-UUID-123",
+  "approval_notes": "Minutes accurately reflect meeting proceedings",
+  "otp": "789012"
+}
+
+Response (200 OK):
+{
+  "status": "success",
+  "message": "Document approved and published",
+  "data": {
+    "document_id": "DOC-UUID-666",
+    "status": "APPROVED",
+    "approved_by": "USR-UUID-123",
+    "approved_at": "2025-11-11T19:45:00Z"
+  }
+}
+            </div>
+
+            <h2 id="implementation">5. IMPLEMENTATION GUIDELINES</h2>
+
+            <h3>5.1 Development Environment Setup</h3>
+
+            <div class="code-block">
+# Backend Setup (Node.js)
+git clone https://github.com/zafrika/nest-api.git
+cd nest-api
+npm install
+
+# Environment Configuration
+cp .env.example .env
+
+# Required Environment Variables
+DATABASE_URL=postgresql://user:pass@localhost:5432/nest_db
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-super-secret-key-change-in-production
+MPESA_CONSUMER_KEY=your-mpesa-key
+MPESA_CONSUMER_SECRET=your-mpesa-secret
+BANK_API_KEY=your-bank-api-key
+BANK_API_URL=https://bank-api.example.com
+
+# Run Database Migrations
+npm run migrate
+
+# Start Development Server
+npm run dev
+            </div>
+
+            <h3>5.2 Database Migration Strategy</h3>
+
+            <div class="code-block">
+-- Migration: 001_initial_schema.sql
+-- Create core tables with proper constraints
+
+BEGIN;
+
+-- Users table
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    phone_number VARCHAR(15) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    id_number VARCHAR(20) UNIQUE NOT NULL,
+    date_of_birth DATE,
+    gender VARCHAR(1) CHECK (gender IN ('M', 'F', 'O')),
+    password_hash VARCHAR(255),
+    pin_hash VARCHAR(255),
+    kyc_status VARCHAR(20) DEFAULT 'PENDING',
+    bank_account_number VARCHAR(50),
+    bank_code VARCHAR(10),
+    mfa_enabled BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes
+CREATE INDEX idx_users_phone ON users(phone_number);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_status ON users(status);
+
+-- Create trigger for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$ language 'plpgsql';
+
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+COMMIT;
+            </div>
+
+            <h3>5.3 API Implementation Example</h3>
+
+            <div class="code-block">
+// controllers/contributionController.js
+
+const { v4: uuidv4 } = require('uuid');
+const MpesaService = require('../services/mpesaService');
+const ContributionService = require('../services/contributionService');
+const NotificationService = require('../services/notificationService');
+
+class ContributionController {
+  async initiateContribution(req, res) {
+    try {
+      const { chama_id, user_id, contribution_type, amount, mpesa_phone } = req.body;
+
+      // Validate contribution amount
+      const chama = await ChamaService.getById(chama_id);
+      if (contribution_type === 'REGULAR' && amount < chama.minimum_contribution) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Minimum contribution is KES ${chama.minimum_contribution}`
+        });
+      }
+
+      // Create contribution record
+      const contribution = await ContributionService.create({
+        contribution_id: uuidv4(),
+        chama_id,
+        user_id,
+        contribution_type,
+        amount,
+        status: 'PENDING'
+      });
+
+      // Initiate M-Pesa STK Push
+      const stkResponse = await MpesaService.stkPush({
+        phone_number: mpesa_phone,
+        amount,
+        account_reference: `CHM-${chama.chama_code}-${contribution.contribution_id.slice(0, 8)}`,
+        transaction_desc: `${contribution_type} contribution`
+      });
+
+      // Store STK request details
+      await ContributionService.updateSTKDetails(contribution.contribution_id, {
+        merchant_request_id: stkResponse.MerchantRequestID,
+        checkout_request_id: stkResponse.CheckoutRequestID
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        message: `STK push sent to ${mpesa_phone}`,
+        data: {
+          contribution_id: contribution.contribution_id,
+          merchant_request_id: stkResponse.MerchantRequestID,
+          checkout_request_id: stkResponse.CheckoutRequestID
+        }
+      });
+
+    } catch (error) {
+      console.error('Contribution initiation error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to initiate contribution',
+        error: error.message
+      });
+    }
+  }
+
+  async mpesaCallback(req, res) {
+    try {
+      const { Body } = req.body;
+      const { stkCallback } = Body;
+      const { MerchantRequestID, CheckoutRequestID, ResultCode, CallbackMetadata } = stkCallback;
+
+      // Acknowledge receipt immediately
+      res.status(200).json({
+        ResultCode: 0,
+        ResultDesc: 'Accepted'
+      });
+
+      // Process callback asynchronously
+      if (ResultCode === 0) {
+        const metadata = {};
+        CallbackMetadata.Item.forEach(item => {
+          metadata[item.Name] = item.Value;
+        });
+
+        // Find contribution record
+        const contribution = await ContributionService.findByMerchantRequestId(MerchantRequestID);
+
+        if (!contribution) {
+          console.error('Contribution not found for MerchantRequestID:', MerchantRequestID);
+          return;
+        }
+
+        // Create transaction record
+        const transaction = await TransactionService.create({
+          transaction_id: uuidv4(),
+          transaction_ref: metadata.MpesaReceiptNumber,
+          transaction_type: 'CONTRIBUTION',
+          to_account_id: contribution.account_id,
+          amount: metadata.Amount,
+          mpesa_receipt_number: metadata.MpesaReceiptNumber,
+          status: 'COMPLETED',
+          initiated_by: contribution.user_id,
+          channel: 'MPESA',
+          metadata: metadata
+        });
+
+        // Update contribution status
+        await ContributionService.complete(contribution.contribution_id, {
+          transaction_id: transaction.transaction_id,
+          mpesa_receipt_number: metadata.MpesaReceiptNumber,
+          payment_date: new Date(metadata.TransactionDate)
+        });
+
+        // Update account balance
+        await AccountService.credit(contribution.account_id, metadata.Amount);
+
+        // Update member totals
+        await ChamaMemberService.updateContributions(
+          contribution.chama_id,
+          contribution.user_id,
+          metadata.Amount
+        );
+
+        // Send notification
+        await NotificationService.send({
+          user_id: contribution.user_id,
+          notification_type: 'CONTRIBUTION_CONFIRMED',
+          title: 'Contribution Received',
+          message: `Your ${contribution.contribution_type} contribution of KES ${metadata.Amount} has been received. Receipt: ${metadata.MpesaReceiptNumber}`,
+          channel: ['SMS', 'WHATSAPP'],
+          priority: 'HIGH'
+        });
+
+        // Log audit trail
+        await AuditService.log({
+          event_type: 'CONTRIBUTION_COMPLETED',
+          entity_type: 'contribution',
+          entity_id: contribution.contribution_id,
+          user_id: contribution.user_id,
+          action: 'MPESA_CALLBACK_PROCESSED',
+          result: 'SUCCESS',
+          metadata: { receipt: metadata.MpesaReceiptNumber }
+        });
+      } else {
+        // Handle failed payment
+        await ContributionService.fail(MerchantRequestID, {
+          result_code: ResultCode,
+          result_desc: stkCallback.ResultDesc
+        });
+      }
+
+    } catch (error) {
+      console.error('M-Pesa callback processing error:', error);
+    }
+  }
+}
+
+module.exports = new ContributionController();
+            </div>
+
+            <h3>5.4 Maker-Checker Implementation</h3>
+
+            <div class="code-block">
+// services/approvalService.js
+
+class ApprovalService {
+  async createApproval(data) {
+    const { approval_type, entity_type, entity_id, chama_id, maker_id } = data;
+
+    const approval = await db.query(`
+      INSERT INTO approvals (
+        approval_id, approval_type, entity_type, entity_id,
+        chama_id, maker_id, status, created_at, expires_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW() + INTERVAL '7 days')
+      RETURNING *
+    `, [
+      uuidv4(), approval_type, entity_type, entity_id,
+      chama_id, maker_id, 'PENDING'
+    ]);
+
+    // Notify checker
+    await this.notifyChecker(approval.rows[0]);
+
+    return approval.rows[0];
+  }
+
+  async processApproval(approval_id, checker_id, decision, otp, notes) {
+    // Verify OTP first
+    const otpValid = await OTPService.verify(checker_id, otp, 'APPROVAL');
+    if (!otpValid) {
+      throw new Error('Invalid or expired OTP');
+    }
+
+    // Get approval details
+    const approval = await this.getById(approval_id);
+    
+    if (approval.status !== 'PENDING') {
+      throw new Error('Approval already processed');
+    }
+
+    // Check if checker has appropriate role
+    const hasPermission = await this.validateCheckerPermission(
+      checker_id,
+      approval.chama_id,
+      approval.approval_type
+    );
+
+    if (!hasPermission) {
+      throw new Error('Insufficient permissions to approve');
+    }
+
+    // Update approval record
+    const result = await db.query(`
+      UPDATE approvals
+      SET 
+        checker_id = $1,
+        checker_decision = $2,
+        checker_notes = $3,
+        checker_action_at = NOW(),
+        otp_verified = true,
+        status = $4
+      WHERE approval_id = $5
+      RETURNING *
+    `, [checker_id, decision, notes, decision, approval_id]);
+
+    const updatedApproval = result.rows[0];
+
+    // Execute entity-specific approval logic
+    if (decision === 'APPROVED') {
+      await this.executeApprovalAction(updatedApproval);
+    }
+
+    // Notify maker of decision
+    await NotificationService.send({
+      user_id: approval.maker_id,
+      notification_type: 'APPROVAL_DECISION',
+      title: `${approval.approval_type} ${decision}`,
+      message: `Your ${approval.approval_type} request has been ${decision.toLowerCase()}`,
+      priority: 'HIGH'
+    });
+
+    // Log audit trail
+    await AuditService.log({
+      event_type: 'APPROVAL_PROCESSED',
+      entity_type: approval.entity_type,
+      entity_id: approval.entity_id,
+      user_id: checker_id,
+      action: decision,
+      metadata: { approval_id, notes }
+    });
+
+    return updatedApproval;
+  }
+
+  async executeApprovalAction(approval) {
+    switch (approval.entity_type) {
+      case 'loan_application':
+        await LoanService.approveLoanApplication(approval.entity_id);
+        break;
+      case 'document':
+        await DocumentService.publishDocument(approval.entity_id);
+        break;
+      case 'bylaw':
+        await BylawService.activateBylaw(approval.entity_id);
+        break;
+      default:
+        console.warn('Unknown entity type for approval:', approval.entity_type);
+    }
+  }
+
+  async validateCheckerPermission(user_id, chama_id, approval_type) {
+    const member = await ChamaMemberService.getByUserAndChama(user_id, chama_id);
+    
+    const permissionMatrix = {
+      'LOAN': ['TREASURER', 'CHAIRPERSON', 'SECRETARY'],
+      'DOCUMENT': ['CHAIRPERSON', 'SECRETARY'],
+      'BYLAW': ['CHAIRPERSON'],
+      'RESOLUTION': ['CHAIRPERSON']
+    };
+
+    const allowedRoles = permissionMatrix[approval_type] || [];
+    return allowedRoles.includes(member.role);
+  }
+
+  async notifyChecker(approval) {
+    // Get eligible checkers for this chama
+    const checkers = await db.query(`
+      SELECT u.user_id, u.first_name, u.last_name, u.phone_number
+      FROM users u
+      INNER JOIN chama_members cm ON u.user_id = cm.user_id
+      WHERE cm.chama_id = $1
+        AND cm.role IN ('CHAIRPERSON', 'TREASURER', 'SECRETARY')
+        AND cm.status = 'ACTIVE'
+        AND u.user_id != $2
+    `, [approval.chama_id, approval.maker_id]);
+
+    for (const checker of checkers.rows) {
+      await NotificationService.send({
+        user_id: checker.user_id,
+        notification_type: 'APPROVAL_PENDING',
+        title: 'Approval Required',
+        message: `${approval.approval_type} requires your approval`,
+        channel: ['SMS', 'WHATSAPP', 'IN_APP'],
+        priority: 'HIGH',
+        related_entity_type: 'approval',
+        related_entity_id: approval.approval_id
+      });
+    }
+  }
+}
+
+module.exports = new ApprovalService();
+            </div>
+
+            <h3>5.5 Bank Integration Implementation</h3>
+
+            <div class="code-block">
+// services/bankService.js
+
+const axios = require('axios');
+
+class BankService {
+  constructor() {
+    this.baseURL = process.env.BANK_API_URL;
+    this.apiKey = process.env.BANK_API_KEY;
+    this.timeout = 30000; // 30 seconds
+  }
+
+  async verifyKYC(accountNumber, idNumber, name) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/kyc/verify`,
+        {
+          account_number: accountNumber,
+          id_number: idNumber,
+          account_name: name
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: this.timeout
+        }
+      );
+
+      return {
+        verified: response.data.verification_status === 'VERIFIED',
+        account_name: response.data.account_name,
+        account_status: response.data.account_status,
+        message: response.data.message
+      };
+
+    } catch (error) {
+      console.error('KYC verification error:', error);
+      throw new Error('Bank KYC verification failed');
+    }
+  }
+
+  async getAccountBalance(accountNumber) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/accounts/${accountNumber}/balance`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          timeout: this.timeout
+        }
+      );
+
+      return {
+        account_number: response.data.account_number,
+        available_balance: parseFloat(response.data.available_balance),
+        current_balance: parseFloat(response.data.current_balance),
+        currency: response.data.currency || 'KES'
+      };
+
+    } catch (error) {
+      console.error('Balance inquiry error:', error);
+      throw new Error('Failed to retrieve account balance');
+    }
+  }
+
+  async transferFunds(fromAccount, toAccount, amount, reference, narration) {
+    try {
+      // Validate sufficient balance first
+      const balance = await this.getAccountBalance(fromAccount);
+      if (balance.available_balance < amount) {
+        throw new Error('Insufficient funds');
+      }
+
+      const response = await axios.post(
+        `${this.baseURL}/transfers`,
+        {
+          from_account: fromAccount,
+          to_account: toAccount,
+          amount: amount,
+          currency: 'KES',
+          reference: reference,
+          narration: narration,
+          transfer_type: 'INTERNAL'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'X-Idempotency-Key': reference // Prevent duplicate transfers
+          },
+          timeout: this.timeout
+        }
+      );
+
+      return {
+        transfer_id: response.data.transfer_id,
+        status: response.data.status,
+        reference: response.data.reference,
+        timestamp: response.data.timestamp,
+        debit_account: response.data.debit_account,
+        credit_account: response.data.credit_account,
+        amount: response.data.amount
+      };
+
+    } catch (error) {
+      console.error('Fund transfer error:', error);
+      
+      // Log failed transfer attempt
+      await AuditService.log({
+        event_type: 'BANK_TRANSFER_FAILED',
+        action: 'TRANSFER',
+        result: 'FAILURE',
+        error_message: error.message,
+        metadata: {
+          from_account: fromAccount,
+          to_account: toAccount,
+          amount,
+          reference
+        }
+      });
+
+      throw new Error(`Bank transfer failed: ${error.message}`);
+    }
+  }
+
+  async getTransactionHistory(accountNumber, fromDate, toDate) {
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/accounts/${accountNumber}/transactions`,
+        {
+          params: {
+            from_date: fromDate,
+            to_date: toDate,
+            limit: 1000
+          },
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          timeout: this.timeout
+        }
+      );
+
+      return response.data.transactions.map(txn => ({
+        transaction_id: txn.transaction_id,
+        transaction_date: txn.transaction_date,
+        transaction_type: txn.transaction_type,
+        amount: parseFloat(txn.amount),
+        balance_after: parseFloat(txn.balance_after),
+        reference: txn.reference,
+        narration: txn.narration,
+        debit_credit: txn.debit_credit
+      }));
+
+    } catch (error) {
+      console.error('Transaction history error:', error);
+      throw new Error('Failed to retrieve transaction history');
+    }
+  }
+
+  async reconcileTransactions(chamaId, accountNumber, date) {
+    try {
+      // Get bank statement for the day
+      const bankTransactions = await this.getTransactionHistory(
+        accountNumber,
+        date,
+        date
+      );
+
+      // Get system transactions for the day
+      const systemTransactions = await TransactionService.getByDateAndAccount(
+        chamaId,
+        date
+      );
+
+      const unmatched = [];
+      const matched = [];
+
+      // Match transactions
+      for (const bankTxn of bankTransactions) {
+        const match = systemTransactions.find(sysTxn => 
+          sysTxn.bank_reference === bankTxn.transaction_id ||
+          sysTxn.mpesa_receipt_number === bankTxn.reference
+        );
+
+        if (match) {
+          matched.push({
+            bank_transaction: bankTxn,
+            system_transaction: match,
+            status: 'MATCHED'
+          });
+        } else {
+          unmatched.push({
+            bank_transaction: bankTxn,
+            status: 'UNMATCHED_IN_SYSTEM'
+          });
+        }
+      }
+
+      // Check for system transactions not in bank statement
+      for (const sysTxn of systemTransactions) {
+        const inBank = bankTransactions.find(bankTxn =>
+          bankTxn.transaction_id === sysTxn.bank_reference ||
+          bankTxn.reference === sysTxn.mpesa_receipt_number
+        );
+
+        if (!inBank && sysTxn.status === 'COMPLETED') {
+          unmatched.push({
+            system_transaction: sysTxn,
+            status: 'UNMATCHED_IN_BANK'
+          });
+        }
+      }
+
+      // Flag unmatched transactions for Treasurer review
+      if (unmatched.length > 0) {
+        await NotificationService.notifyTreasurer(chamaId, {
+          type: 'RECONCILIATION_ISSUE',
+          count: unmatched.length,
+          date: date
+        });
+      }
+
+      return {
+        date,
+        total_bank_transactions: bankTransactions.length,
+        total_system_transactions: systemTransactions.length,
+        matched_count: matched.length,
+        unmatched_count: unmatched.length,
+        matched,
+        unmatched
+      };
+
+    } catch (error) {
+      console.error('Reconciliation error:', error);
+      throw new Error('Transaction reconciliation failed');
+    }
+  }
+}
+
+module.exports = new BankService();
+            </div>
+
+            <h2 id="security">6. SECURITY IMPLEMENTATION</h2>
+
+            <h3>6.1 Password & PIN Security</h3>
+
+            <div class="code-block">
+// utils/security.js
+
+const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+
+class SecurityUtil {
+  constructor() {
+    this.SALT_ROUNDS = 12; // bcrypt salt rounds
+    this.AES_ALGORITHM = 'aes-256-gcm';
+    this.ENCRYPTION_KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
+  }
+
+  // Password hashing
+  async hashPassword(password) {
+    // Validate password strength
+    if (!this.isStrongPassword(password)) {
+      throw new Error('Password does not meet security requirements');
+    }
+    return await bcrypt.hash(password, this.SALT_ROUNDS);
+  }
+
+  async verifyPassword(password, hash) {
+    return await bcrypt.compare(password, hash);
+  }
+
+  isStrongPassword(password) {
+    // Minimum 8 characters, 1 uppercase, 1 lowercase, 1 number, 1 special char
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    return regex.test(password);
+  }
+
+  // PIN hashing
+  async hashPIN(pin) {
+    if (!this.isValidPIN(pin)) {
+      throw new Error('PIN must be 4-6 digits with no sequential or repeated numbers');
+    }
+    return await bcrypt.hash(pin, this.SALT_ROUNDS);
+  }
+
+  async verifyPIN(pin, hash) {
+    return await bcrypt.compare(pin, hash);
+  }
+
+  isValidPIN(pin) {
+    // Must be 4-6 digits
+    if (!/^\d{4,6}$/.test(pin)) return false;
+
+    // Check for sequential numbers (1234, 5678)
+    const sequential = /(?:0123|1234|2345|3456|4567|5678|6789)/;
+    if (sequential.test(pin)) return false;
+
+    // Check for repeated digits (1111, 2222)
+    const repeated = /^(\d)\1+$/;
+    if (repeated.test(pin)) return false;
+
+    return true;
+  }
+
+  // Data encryption (for sensitive fields like bank account numbers)
+  encrypt(text) {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(this.AES_ALGORITHM, this.ENCRYPTION_KEY, iv);
+    
+    let encrypted = cipher.update(text, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    
+    const authTag = cipher.getAuthTag();
+    
+    return {
+      iv: iv.toString('hex'),
+      encryptedData: encrypted,
+      authTag: authTag.toString('hex')
+    };
+  }
+
+  decrypt(encryptedData, iv, authTag) {
+    const decipher = crypto.createDecipheriv(
+      this.AES_ALGORITHM,
+      this.ENCRYPTION_KEY,
+      Buffer.from(iv, 'hex')
+    );
+    
+    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+    
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    
+    return decrypted;
+  }
+
+  // Generate secure random tokens
+  generateToken(length = 32) {
+    return crypto.randomBytes(length).toString('hex');
+  }
+
+  // Generate OTP
+  generateOTP(length = 6) {
+    const digits = '0123456789';
+    let otp = '';
+    for (let i = 0; i < length; i++) {
+      otp += digits[crypto.randomInt(0, digits.length)];
+    }
+    return otp;
+  }
+
+  // Hash sensitive data for comparison (like tokens in DB)
+  hashToken(token) {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+}
+
+module.exports = new SecurityUtil();
+            </div>
+
+            <h3>6.2 JWT Token Management</h3>
+
+            <div class="code-block">
+// services/tokenService.js
+
+const jwt = require('jsonwebtoken');
+const Redis = require('ioredis');
+
+class TokenService {
+  constructor() {
+    this.redis = new Redis(process.env.REDIS_URL);
+    this.accessTokenSecret = process.env.JWT_SECRET;
+    this.refreshTokenSecret = process.env.JWT_REFRESH_SECRET;
+    this.accessTokenExpiry = '30m';
+    this.refreshTokenExpiry = '7d';
+  }
+
+  generateAccessToken(payload) {
+    return jwt.sign(
+      {
+        sub: payload.user_id,
+        role: payload.role,
+        channel: payload.channel,
+        type: 'access'
+      },
+      this.accessTokenSecret,
+      { expiresIn: this.accessTokenExpiry }
+    );
+  }
+
+  generateRefreshToken(payload) {
+    const token = jwt.sign(
+      {
+        sub: payload.user_id,
+        type: 'refresh'
+      },
+      this.refreshTokenSecret,
+      { expiresIn: this.refreshTokenExpiry }
+    );
+
+    // Store refresh token in Redis with expiry
+    const key = `refresh_token:${payload.user_id}:${SecurityUtil.hashToken(token)}`;
+    this.redis.setex(key, 7 * 24 * 60 * 60, JSON.stringify(payload));
+
+    return token;
+  }
+
+  verifyAccessToken(token) {
+    try {
+      return jwt.verify(token, this.accessTokenSecret);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new Error('Access token expired');
+      }
+      throw new Error('Invalid access token');
+    }
+  }
+
+  async verifyRefreshToken(token) {
+    try {
+      const decoded = jwt.verify(token, this.refreshTokenSecret);
+      
+      // Check if token exists in Redis (not revoked)
+      const key = `refresh_token:${decoded.sub}:${SecurityUtil.hashToken(token)}`;
+      const exists = await this.redis.exists(key);
+      
+      if (!exists) {
+        throw new Error('Refresh token revoked or expired');
+      }
+      
+      return decoded;
+    } catch (error) {
+      throw new Error('Invalid refresh token');
+    }
+  }
+
+  async revokeRefreshToken(userId, token) {
+    const key = `refresh_token:${userId}:${SecurityUtil.hashToken(token)}`;
+    await this.redis.del(key);
+  }
+
+  async revokeAllUserTokens(userId) {
+    const pattern = `refresh_token:${userId}:*`;
+    const keys = await this.redis.keys(pattern);
+    if (keys.length > 0) {
+      await this.redis.del(...keys);
+    }
+  }
+}
+
+module.exports = new TokenService();
+            </div>
+
+            <h3>6.3 Rate Limiting Middleware</h3>
+
+            <div class="code-block">
+// middleware/rateLimiter.js
+
+const Redis = require('ioredis');
+const redis = new Redis(process.env.REDIS_URL);
+
+class RateLimiter {
+  async checkLimit(identifier, maxRequests, windowSeconds) {
+    const key = `rate_limit:${identifier}`;
+    const current = await redis.incr(key);
+    
+    if (current === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+    
+    if (current > maxRequests) {
+      const ttl = await redis.ttl(key);
+      throw {
+        limited: true,
+        retryAfter: ttl,
+        message: `Rate limit exceeded. Try again in ${ttl} seconds`
+      };
+    }
+    
+    return {
+      limited: false,
+      remaining: maxRequests - current
+    };
+  }
+}
+
+const rateLimiter = new RateLimiter();
+
+// Middleware for login attempts
+const loginRateLimiter = async (req, res, next) => {
+  try {
+    const identifier = `login:${req.body.phone_number}:${req.ip}`;
+    await rateLimiter.checkLimit(identifier, 5, 900); // 5 attempts per 15 minutes
+    next();
+  } catch (error) {
+    if (error.limited) {
+      return res.status(429).json({
+        status: 'error',
+        message: error.message,
+        retry_after: error.retryAfter
+      });
+    }
+    next(error);
+  }
+};
+
+// Middleware for OTP requests
+const otpRateLimiter = async (req, res, next) => {
+  try {
+    const identifier = `otp:${req.body.phone_number}`;
+    await rateLimiter.checkLimit(identifier, 3, 3600); // 3 OTPs per hour
+    next();
+  } catch (error) {
+    if (error.limited) {
+      return res.status(429).json({
+        status: 'error',
+        message: error.message,
+        retry_after: error.retryAfter
+      });
+    }
+    next(error);
+  }
+};
+
+// General API rate limiter
+const apiRateLimiter = async (req, res, next) => {
+  try {
+    const identifier = `api:${req.user?.user_id || req.ip}`;
+    await rateLimiter.checkLimit(identifier, 100, 60); // 100 requests per minute
+    next();
+  } catch (error) {
+    if (error.limited) {
+      return res.status(429).json({
+        status: 'error',
+        message: 'Too many requests',
+        retry_after: error.retryAfter
+      });
+    }
+    next(error);
+  }
+};
+
+module.exports = {
+  loginRateLimiter,
+  otpRateLimiter,
+  apiRateLimiter
+};
+            </div>
+
+            <h3>6.4 Audit Logging Service</h3>
+
+            <div class="code-block">
+
